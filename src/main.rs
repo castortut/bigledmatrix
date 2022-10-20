@@ -7,6 +7,7 @@ use core::fmt::Debug;
 
 use cortex_m_rt::{entry, exception, ExceptionFrame};    //  Stack frame for exception handling.
 use panic_semihosting as _;
+use cortex_m_semihosting::hprintln;
 
 use embedded_hal::digital::v2::OutputPin;
 use stm32f1xx_hal::{delay::Delay, pac, prelude::*};
@@ -70,12 +71,19 @@ impl<ClockPin, DataPin, StrobePin> LedMatrix<ClockPin, DataPin, StrobePin> where
 
 #[entry]
 fn main() -> ! {
+    hprintln!("Starting").unwrap();
+
     // Init chip
     let cp = cortex_m::Peripherals::take().unwrap();
     let dp = pac::Peripherals::take().unwrap();
     let mut flash = dp.FLASH.constrain();
     let mut rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.freeze(&mut flash.acr);
+    let clocks = rcc.cfgr
+        .use_hse(8.mhz())
+        .sysclk(72.mhz())
+        .hclk(72.mhz())
+        .pclk1(36.mhz())
+        .freeze(&mut flash.acr);
     let mut _delay = Delay::new(cp.SYST, clocks);
 
     // Init GPIO
@@ -83,6 +91,8 @@ fn main() -> ! {
     let clock = gpioa.pa0.into_push_pull_output(&mut gpioa.crl);
     let data = gpioa.pa2.into_push_pull_output(&mut gpioa.crl);
     let strobe = gpioa.pa1.into_push_pull_output(&mut gpioa.crl);
+
+    hprintln!("Init OK!").unwrap();
 
     // LED matrix properties
     const HEIGHT: u16 = 8;
