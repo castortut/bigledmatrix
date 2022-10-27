@@ -1,4 +1,3 @@
-#![deny(unsafe_code)]   //  Don't allow unsafe code in this file.
 #![deny(warnings)]      //  If the Rust compiler generates a warning, stop the compilation with an error.
 #![no_main]             //  Don't use the Rust standard bootstrap. We will provide our own.
 #![no_std]              //  Don't use the Rust standard library. We are building a binary that can run on its own.
@@ -10,7 +9,7 @@ use panic_semihosting as _;
 use cortex_m_semihosting::hprintln;
 
 use embedded_hal::digital::v2::OutputPin;
-use stm32f1xx_hal::{delay::Delay, pac, prelude::*};
+use stm32f1xx_hal::{pac, prelude::*};
 
 struct LedMatrix<ClockPin, DataPin, StrobePin> {
     clock: ClockPin,
@@ -71,23 +70,22 @@ impl<ClockPin, DataPin, StrobePin> LedMatrix<ClockPin, DataPin, StrobePin> where
 
 #[entry]
 fn main() -> ! {
-    hprintln!("Starting").unwrap();
+    hprintln!("Starting");
 
     // Init chip
-    let cp = cortex_m::Peripherals::take().unwrap();
+    let _cp = cortex_m::Peripherals::take().unwrap();
     let dp = pac::Peripherals::take().unwrap();
     let mut flash = dp.FLASH.constrain();
-    let mut rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr
-        .use_hse(8.mhz())
-        .sysclk(72.mhz())
-        .hclk(72.mhz())
-        .pclk1(36.mhz())
+    let rcc = dp.RCC.constrain();
+    let _clocks = rcc.cfgr
+        .use_hse(8.MHz())
+        .sysclk(72.MHz())
+        .hclk(72.MHz())
+        .pclk1(36.MHz())
         .freeze(&mut flash.acr);
-    let mut _delay = Delay::new(cp.SYST, clocks);
 
     // Init GPIO
-    let mut gpioa = dp.GPIOA.split(&mut rcc.apb2);
+    let mut gpioa = dp.GPIOA.split();
     let clock0 = gpioa.pa0.into_push_pull_output(&mut gpioa.crl);
     let strobe0 = gpioa.pa1.into_push_pull_output(&mut gpioa.crl);
     let data0 = gpioa.pa2.into_push_pull_output(&mut gpioa.crl);
@@ -96,7 +94,7 @@ fn main() -> ! {
     let strobe1 = gpioa.pa6.into_push_pull_output(&mut gpioa.crl);
     let data1 = gpioa.pa7.into_push_pull_output(&mut gpioa.crl);
 
-    hprintln!("Init OK!").unwrap();
+    hprintln!("Init OK!");
 
     // LED matrix properties
     const HEIGHT: u16 = 8;
@@ -152,12 +150,12 @@ fn main() -> ! {
 }
 
 #[exception]
-fn HardFault(ef: &ExceptionFrame) -> ! {
+unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("Hard fault: {:#?}", ef);
 }
 
 #[exception]
-fn DefaultHandler(irqn: i16) {
+unsafe fn DefaultHandler(irqn: i16) {
     panic!("Unhandled exception (IRQn = {})", irqn);
 }
 
