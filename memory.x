@@ -1,3 +1,9 @@
+/*
+ * NOTE: While this linker script is not directly referenced by anything
+ * in this repository, the link.x script of the cortex-m-rt crate does
+ * include this.
+ */
+
 MEMORY
 {
   /* NOTE 1 K = 1 KiBi = 1024 bytes */
