@@ -12,10 +12,13 @@ panic-semihosting = "0.5.4"
 
 embedded-hal = "0.2.7"
 
+usb-device = "0.2.9"
+usbd-serial = "0.1.1"
+
 [dependencies.stm32f1]
 version = "0.15.1"
 features = ["stm32f103", "rt"]
 
 [dependencies.stm32f1xx-hal]
 version = "0.9.0"
-features = ["rt", "stm32f103", "medium"]
+features = ["rt", "stm32f103", "medium", "stm32-usbd"]

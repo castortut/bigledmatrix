@@ -23,10 +23,12 @@ monitor arm semihosting enable
 
 load
 
-break main
+#break main
+
+#continue
+
+#clear main
+
+#step
 
 continue
-
-clear main
-
-step
