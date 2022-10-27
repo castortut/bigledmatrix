@@ -88,9 +88,13 @@ fn main() -> ! {
 
     // Init GPIO
     let mut gpioa = dp.GPIOA.split(&mut rcc.apb2);
-    let clock = gpioa.pa0.into_push_pull_output(&mut gpioa.crl);
-    let data = gpioa.pa2.into_push_pull_output(&mut gpioa.crl);
-    let strobe = gpioa.pa1.into_push_pull_output(&mut gpioa.crl);
+    let clock0 = gpioa.pa0.into_push_pull_output(&mut gpioa.crl);
+    let strobe0 = gpioa.pa1.into_push_pull_output(&mut gpioa.crl);
+    let data0 = gpioa.pa2.into_push_pull_output(&mut gpioa.crl);
+
+    let clock1 = gpioa.pa5.into_push_pull_output(&mut gpioa.crl);
+    let strobe1 = gpioa.pa6.into_push_pull_output(&mut gpioa.crl);
+    let data1 = gpioa.pa7.into_push_pull_output(&mut gpioa.crl);
 
     hprintln!("Init OK!").unwrap();
 
@@ -101,14 +105,16 @@ fn main() -> ! {
     // Hello world
     let pixels: [u8; 576] = [255, 0, 255, 0, 255, 0, 255, 0, 0, 255, 0, 255, 0, 255, 0, 255, 255, 0, 255, 0, 255, 0, 255, 0, 0, 255, 0, 255, 0, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0, 0, 0, 255, 0, 255, 0, 255, 255, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 0, 255, 0, 255, 255, 0, 255, 255, 0, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255];
 
-    let mut matrix = LedMatrix::new(clock, data, strobe, HEIGHT, WIDTH);
+    let mut matrix0 = LedMatrix::new(clock0, data0, strobe0, HEIGHT, WIDTH);
+    let mut matrix1 = LedMatrix::new(clock1, data1, strobe1, HEIGHT, WIDTH);
 
     // Start a full display width outside of draw area
     const INITXPOS: u16 = 2 * WIDTH;
     let mut xpos = INITXPOS;
 
     loop {
-        matrix.clear();
+        matrix0.clear();
+        matrix1.clear();
 
         // Leading space for scroller
         let maxpos = if xpos < WIDTH {
@@ -119,20 +125,24 @@ fn main() -> ! {
 
         for pixel in pixels[0..maxpos as usize].iter() {
             if *pixel == 0 {
-                matrix.pixel_on();
+                matrix0.pixel_on();
+                matrix1.pixel_off();
             } else {
-                matrix.pixel_off();
+                matrix0.pixel_off();
+                matrix1.pixel_on();
             }
         }
 
         // Trailing space for scroller
         if xpos > WIDTH {
             for _ in 0 .. HEIGHT*(xpos-WIDTH) {
-                matrix.pixel_off();
+                matrix0.pixel_off();
+                matrix1.pixel_on();
             }
         }
 
-        matrix.show();
+        matrix0.show();
+        matrix1.show();
         xpos -= 1;
 
         if xpos == 0 {
