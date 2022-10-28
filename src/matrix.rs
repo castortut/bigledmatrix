@@ -69,7 +69,6 @@ impl<ClockPin, DataPin, StrobePin> LedMatrix<ClockPin, DataPin, StrobePin> where
             } else {
                 self.pixel_off();
             }
-            self.pulse_clock();
         }
     }
 }
