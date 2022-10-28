@@ -21,6 +21,7 @@ const HELP_MESSAGE1: &str = "
 .1 - select row 1\r
 .s - strobe active row\r
 .c - clear active row\r
+.i - toggle instant strobe\r
 ";
 
 const HELP_MESSAGE2: &str = "
@@ -83,9 +84,11 @@ fn main() -> ! {
     const SHOW: u8 = 's' as u8;
     const CLEAR: u8 = 'c' as u8;
     const HELP: u8 = 'h' as u8;
+    const INSTANT: u8 = 'i' as u8;
 
     let mut command_mode = false;
     let mut active_row = Row0;
+    let mut instant_strobe = false;
 
     loop {
         if usb_serial.poll() {
@@ -133,12 +136,27 @@ fn main() -> ! {
                             usb_serial.write("Clearing\r\n".as_bytes()).unwrap();
                             command_mode = false;
                         },
+                        (true, INSTANT, _) => {
+                            if instant_strobe {
+                                usb_serial.write("Disabling instant strobe\r\n".as_bytes()).unwrap();
+                                instant_strobe = false;
+                            } else {
+                                usb_serial.write("Enabling instant strobe\r\n".as_bytes()).unwrap();
+                                instant_strobe = true;
+                            }
+                            command_mode = false;
+                        },
                         (true, _, _) => {
                             usb_serial.write("Invalid command character\r\n".as_bytes()).unwrap();
                             command_mode = false;
                         }
                         (false, CONTROL, _) => command_mode = true,
-                        (false, _, Row0) => matrix0.push_row(byte),
+                        (false, _, Row0) => {
+                            matrix0.push_row(byte);
+                            if instant_strobe {
+                                matrix0.show();
+                            }
+                        },
                         (false, _, Row1) => matrix1.push_row(byte),
                     };
                 }
