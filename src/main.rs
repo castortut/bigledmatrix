@@ -96,6 +96,9 @@ fn main() -> ! {
                         // Escape double-CONTROL
                         (true, CONTROL, Row0) => {
                             matrix0.push_row(byte);
+                            if instant_strobe {
+                                matrix0.show();
+                            }
                             command_mode = false;
                         },
                         (true, CONTROL, Row1) => {
