@@ -1,75 +1,18 @@
-//#![deny(warnings)]      //  If the Rust compiler generates a warning, stop the compilation with an error.
+#![deny(warnings)]      //  If the Rust compiler generates a warning, stop the compilation with an error.
 #![no_main]             //  Don't use the Rust standard bootstrap. We will provide our own.
 #![no_std]              //  Don't use the Rust standard library. We are building a binary that can run on its own.
 
 mod usb;
-
-use core::fmt::Debug;
+mod matrix;
 
 use cortex_m_rt::{entry, exception, ExceptionFrame};    //  Stack frame for exception handling.
 use panic_semihosting as _;
 use cortex_m_semihosting::hprintln;
 
-use embedded_hal::digital::v2::OutputPin;
 use stm32f1xx_hal::{pac, prelude::*};
 
 use usb::UsbSerial;
-
-struct LedMatrix<ClockPin, DataPin, StrobePin> {
-    clock: ClockPin,
-    data: DataPin,
-    strobe: StrobePin,
-    // Make size an u16 to prevent overflow on multiplication and avoid
-    // lots of casting
-    height: u16,
-    width: u16,
-}
-
-impl<ClockPin, DataPin, StrobePin> LedMatrix<ClockPin, DataPin, StrobePin> where
-    ClockPin: OutputPin, ClockPin::Error: Debug,
-    DataPin: OutputPin, DataPin::Error: Debug,
-    StrobePin: OutputPin, StrobePin::Error: Debug,
-{
-    fn new(
-        clock: ClockPin, data: DataPin, strobe: StrobePin,
-        height: u16, width: u16,
-    ) -> LedMatrix<ClockPin, DataPin, StrobePin> {
-        LedMatrix {
-            clock,
-            data,
-            strobe,
-            height,
-            width,
-        }
-    }
-
-    fn pulse_clock(&mut self) {
-        self.clock.set_high().unwrap();
-        self.clock.set_low().unwrap();
-    }
-
-    fn show(&mut self) {
-        self.strobe.set_high().unwrap();
-        self.strobe.set_low().unwrap();
-    }
-
-    fn clear(&mut self) {
-        self.data.set_low().unwrap();
-        for _ in 0 .. self.width * self.height {
-            self.pulse_clock();
-        }
-    }
-
-    fn pixel_on(&mut self) {
-        self.data.set_high().unwrap();
-        self.pulse_clock();
-    }
-
-    fn pixel_off(&mut self) {
-        self.data.set_low().unwrap();
-        self.pulse_clock();
-    }
-}
+use matrix::LedMatrix;
 
 #[entry]
 fn main() -> ! {
