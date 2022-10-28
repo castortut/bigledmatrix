@@ -1,6 +1,6 @@
 [package]
 authors = ["Esa Varemo <esa@kuivanto.fi>"]
-edition = "2018"
+edition = "2021"
 name = "stm32f1-hello"
 version = "0.1.0"
 
