@@ -78,9 +78,13 @@ impl UsbSerial {
         self.dev.poll(&mut [&mut self.serial])
     }
 
-    pub fn read(&mut self, buf: &mut [u8] ) -> Result<usize, UsbError>{
+    pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, UsbError>{
         self.serial.read(buf)
 
+    }
+
+    pub fn write(&mut self, buf: &[u8]) -> Result<usize, UsbError> {
+        self.serial.write(buf)
     }
 }
 

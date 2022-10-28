@@ -56,5 +56,16 @@ impl<ClockPin, DataPin, StrobePin> LedMatrix<ClockPin, DataPin, StrobePin> where
         self.data.set_low().unwrap();
         self.pulse_clock();
     }
+
+    pub fn push_row(&mut self, row: u8) {
+        for i in (0..=7).rev() {
+            if (row & (1 << i)) != 0 {
+                self.pixel_on();
+            } else {
+                self.pixel_off();
+            }
+            self.pulse_clock();
+        }
+    }
 }
 
