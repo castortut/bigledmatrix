@@ -2,18 +2,18 @@
 #![no_main]             //  Don't use the Rust standard bootstrap. We will provide our own.
 #![no_std]              //  Don't use the Rust standard library. We are building a binary that can run on its own.
 
+mod usb;
+
 use core::fmt::Debug;
 
-use cortex_m::asm::delay;
 use cortex_m_rt::{entry, exception, ExceptionFrame};    //  Stack frame for exception handling.
 use panic_semihosting as _;
 use cortex_m_semihosting::hprintln;
 
-use usb_device::prelude::*;
-use usbd_serial::{SerialPort, USB_CLASS_CDC};
-
 use embedded_hal::digital::v2::OutputPin;
-use stm32f1xx_hal::{pac, prelude::*, usb::{Peripheral, UsbBus}};
+use stm32f1xx_hal::{pac, prelude::*};
+
+use usb::UsbSerial;
 
 struct LedMatrix<ClockPin, DataPin, StrobePin> {
     clock: ClockPin,
@@ -69,7 +69,6 @@ impl<ClockPin, DataPin, StrobePin> LedMatrix<ClockPin, DataPin, StrobePin> where
         self.data.set_low().unwrap();
         self.pulse_clock();
     }
-
 }
 
 #[entry]
@@ -88,7 +87,6 @@ fn main() -> ! {
         .pclk1(24.MHz())
         .freeze(&mut flash.acr);
 
-    assert!(clocks.usbclk_valid());
 
     // Init GPIO
     let mut gpioa = dp.GPIOA.split();
@@ -101,60 +99,34 @@ fn main() -> ! {
     let data1 = gpioa.pa7.into_push_pull_output(&mut gpioa.crl);
 
     // Init USB
-    
-    // BluePill board has a pull-up resistor on the D+ line.
-    // Pull the D+ pin down to send a RESET condition to the USB bus.
-    // This forced reset is needed only for development, without it host
-    // will not reset your device when you upload new firmware.
-    let mut usb_dp = gpioa.pa12.into_push_pull_output(&mut gpioa.crh);
-    usb_dp.set_low();
-    delay(clocks.sysclk().raw() / 100);
+    let mut usb_serial = unsafe { UsbSerial::new(&clocks, dp.USB, gpioa.pa12, gpioa.pa11, &mut gpioa.crh) };
 
-    let mut usb_dm = gpioa.pa11.into_floating_input(&mut gpioa.crh);
-    let mut usb_dp = usb_dp.into_floating_input(&mut gpioa.crh);
-
-    let usb = Peripheral {
-        usb: dp.USB,
-        pin_dm: usb_dm,
-        pin_dp: usb_dp,
-    };
-    let usb_bus = UsbBus::new(usb);
-    let mut serial = SerialPort::new(&usb_bus);
-    // https://github.com/obdev/v-usb/blob/master/usbdrv/USB-IDs-for-free.txt
-    let mut usb_dev = UsbDeviceBuilder::new(&usb_bus, UsbVidPid(0x16c0, 0x05e1))
-        .manufacturer("Castor https://avaruuskerho.fi")
-        .product("LED Matrix 72x16")
-        .serial_number("1")
-        .device_class(USB_CLASS_CDC)
-        .build();
-
-    hprintln!("Init OK!");
-
-    // LED matrix properties
+    // Create LED matrices
     const HEIGHT: u16 = 8;
     const WIDTH: u16 = 72;
 
-    // Hello world
-    //let pixels: [u8; 576] = [255, 0, 255, 0, 255, 0, 255, 0, 0, 255, 0, 255, 0, 255, 0, 255, 255, 0, 255, 0, 255, 0, 255, 0, 0, 255, 0, 255, 0, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0, 0, 0, 255, 0, 255, 0, 255, 255, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 0, 255, 0, 255, 255, 0, 255, 255, 0, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255];
+    let mut _matrix0 = LedMatrix::new(clock0, data0, strobe0, HEIGHT, WIDTH);
+    let mut _matrix1 = LedMatrix::new(clock1, data1, strobe1, HEIGHT, WIDTH);
 
-    let mut matrix0 = LedMatrix::new(clock0, data0, strobe0, HEIGHT, WIDTH);
-    let mut matrix1 = LedMatrix::new(clock1, data1, strobe1, HEIGHT, WIDTH);
+    hprintln!("*");
+
+    loop {
+        if usb_serial.poll() {
+            let mut buf = [0u8; 4];
+            if usb_serial.read(&mut buf).is_ok() {
+                hprintln!("Rx: {:?}", &buf);
+            }
+        }
+    }
+
+    // Hello world
+    /*let pixels: [u8; 576] = [255, 0, 255, 0, 255, 0, 255, 0, 0, 255, 0, 255, 0, 255, 0, 255, 255, 0, 255, 0, 255, 0, 255, 0, 0, 255, 0, 255, 0, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0, 0, 0, 255, 0, 255, 0, 255, 255, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 255, 255, 255, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 0, 255, 0, 255, 255, 0, 255, 255, 0, 255, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255];
 
     // Start a full display width outside of draw area
     const INITXPOS: u16 = 2 * WIDTH;
     let mut xpos = INITXPOS;
 
     loop {
-        //hprintln!("Polling USB!");
-        if usb_dev.poll(&mut [&mut serial]) {
-            let mut buf = [0u8; 4];
-            if serial.read(&mut buf).is_ok() {
-                hprintln!("Rx: {:?}", &buf);
-            }
-        }
-    }
-
-    /*loop {
         matrix0.clear();
         matrix1.clear();
 
