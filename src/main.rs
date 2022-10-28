@@ -12,7 +12,7 @@ use cortex_m_semihosting::hprintln;
 
 use stm32f1xx_hal::{pac, prelude::*};
 
-use usb::UsbSerial;
+use usb::{UsbSerial, UsbBus};
 use matrix::LedMatrix;
 
 const HELP_MESSAGE1: &str = "
@@ -65,7 +65,8 @@ fn main() -> ! {
     let data1 = gpioa.pa7.into_push_pull_output(&mut gpioa.crl);
 
     // Init USB
-    let mut usb_serial = unsafe { UsbSerial::new(&clocks, dp.USB, gpioa.pa12, gpioa.pa11, &mut gpioa.crh) };
+    let usb_bus = UsbBus::new(&clocks, dp.USB, gpioa.pa12, gpioa.pa11, &mut gpioa.crh);
+    let mut usb_serial = UsbSerial::new(&usb_bus);
 
     // Create LED matrices
     const HEIGHT: u16 = 8;
