@@ -82,5 +82,30 @@ impl<'a> UsbSerial<'a> {
     pub fn write(&mut self, buf: &[u8]) -> Result<usize, UsbError> {
         self.serial.write(buf)
     }
+
+    pub fn write_str(&mut self, message: &str) -> Result<usize, UsbError> {
+        let bytes = message.as_bytes();
+        let mut bytes_remaining = message.len();
+        let mut bytes_written = 0;
+        while bytes_remaining > 0 {
+            let range_start = bytes_written;
+            let range_end = if bytes_remaining > 32 {
+                bytes_written + 32
+            } else {
+                bytes_written + bytes_remaining
+            };
+            let result = self.write(&bytes[range_start..range_end]);
+            if let Ok(written) = result {
+                bytes_written += written;
+                bytes_remaining -= written;
+            } else {
+                return result;
+            }
+            delay(500);
+        }
+
+        Ok(bytes_written)
+
+    }
 }
 

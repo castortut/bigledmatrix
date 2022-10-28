@@ -5,7 +5,6 @@
 mod usb;
 mod matrix;
 
-use cortex_m::asm::delay;
 use cortex_m_rt::{entry, exception, ExceptionFrame};    //  Stack frame for exception handling.
 use panic_semihosting as _;
 use cortex_m_semihosting::hprintln;
@@ -15,19 +14,15 @@ use stm32f1xx_hal::{pac, prelude::*};
 use usb::{UsbSerial, UsbBus};
 use matrix::LedMatrix;
 
-const HELP_MESSAGE1: &str = "
+const HELP_MESSAGE: &str = "
 .h - show this help\r
 .0 - select row 0\r
 .1 - select row 1\r
 .s - strobe active row\r
 .c - clear active row\r
 .i - toggle instant strobe\r
-";
-
-const HELP_MESSAGE2: &str = "
+\r
 anything else will be interpreted as data to active row\r
-";
-const HELP_MESSAGE3: &str = "
 use '..' to enter a literal '.'-byte as data\r
 ";
 
@@ -108,46 +103,41 @@ fn main() -> ! {
                             command_mode = false;
                         },
                         (true, HELP, _) => {
-                            usb_serial.write(HELP_MESSAGE1.as_bytes()).unwrap();
-                            delay(1000);
-                            usb_serial.write(HELP_MESSAGE2.as_bytes()).unwrap();
-                            delay(1000);
-                            usb_serial.write(HELP_MESSAGE3.as_bytes()).unwrap();
-                            delay(1000);
+                            usb_serial.write_str(&HELP_MESSAGE).unwrap();
                             command_mode = false;
                         },
                         (true, ROW0, _) => {
                             active_row = Row0;
-                            usb_serial.write("Switching to row 0\r\n".as_bytes()).unwrap();
+                            usb_serial.write_str("Switching to row 0\r\n").unwrap();
                             command_mode = false;
                         },
                         (true, ROW1, _) => {
                             active_row = Row1;
-                            usb_serial.write("Switching to row 1\r\n".as_bytes()).unwrap();
+                            usb_serial.write_str("Switching to row 1\r\n").unwrap();
                             command_mode = false;
                         },
                         (true, SHOW, _) => {
                             matrix0.show();
-                            usb_serial.write("Showing\r\n".as_bytes()).unwrap();
+                            usb_serial.write_str("Showing\r\n").unwrap();
                             command_mode = false;
                         },
                         (true, CLEAR, _) => {
                             matrix0.clear();
-                            usb_serial.write("Clearing\r\n".as_bytes()).unwrap();
+                            usb_serial.write_str("Clearing\r\n").unwrap();
                             command_mode = false;
                         },
                         (true, INSTANT, _) => {
                             if instant_strobe {
-                                usb_serial.write("Disabling instant strobe\r\n".as_bytes()).unwrap();
+                                usb_serial.write_str("Disabling instant strobe\r\n").unwrap();
                                 instant_strobe = false;
                             } else {
-                                usb_serial.write("Enabling instant strobe\r\n".as_bytes()).unwrap();
+                                usb_serial.write_str("Enabling instant strobe\r\n").unwrap();
                                 instant_strobe = true;
                             }
                             command_mode = false;
                         },
                         (true, _, _) => {
-                            usb_serial.write("Invalid command character\r\n".as_bytes()).unwrap();
+                            usb_serial.write_str("Invalid command character\r\n").unwrap();
                             command_mode = false;
                         }
                         (false, CONTROL, _) => command_mode = true,
