@@ -1,4 +1,5 @@
 use core::fmt::Debug;
+use cortex_m::asm::delay;
 use embedded_hal::digital::v2::OutputPin;
 
 pub struct LedMatrix<ClockPin, DataPin, StrobePin> {
@@ -32,12 +33,16 @@ impl<ClockPin, DataPin, StrobePin> LedMatrix<ClockPin, DataPin, StrobePin> where
 
     pub fn pulse_clock(&mut self) {
         self.clock.set_high().unwrap();
+        delay(10);
         self.clock.set_low().unwrap();
+        delay(10);
     }
 
     pub fn show(&mut self) {
         self.strobe.set_high().unwrap();
+        delay(10);
         self.strobe.set_low().unwrap();
+        delay(10);
     }
 
     pub fn clear(&mut self) {
