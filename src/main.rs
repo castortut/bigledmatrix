@@ -129,7 +129,7 @@ fn main() -> ! {
                             command_mode = false;
                         },
                         (true, CLEAR, _) => {
-                            matrix0.show();
+                            matrix0.clear();
                             usb_serial.write("Clearing\r\n".as_bytes()).unwrap();
                             command_mode = false;
                         },
