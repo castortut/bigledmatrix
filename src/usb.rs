@@ -48,6 +48,7 @@ impl UsbBus {
 pub struct UsbSerial<'a> {
     dev: UsbDevice<'a, usb::UsbBus<usb::Peripheral>>,
     serial: SerialPort<'a, usb::UsbBus<usb::Peripheral>>,
+    quiet_mode: bool,
 }
 
 impl<'a> UsbSerial<'a> {
@@ -67,6 +68,7 @@ impl<'a> UsbSerial<'a> {
         UsbSerial {
             dev: usb_dev,
             serial: usb_serial,
+            quiet_mode: false,
         }
     }
 
@@ -80,13 +82,16 @@ impl<'a> UsbSerial<'a> {
     }
 
     pub fn write(&mut self, buf: &[u8]) -> usize {
-        loop {
-            let result = self.serial.write(buf);
-            if let Ok(count) = result {
-                return count;
+        if self.quiet_mode {
+            return buf.len();
+        } else {
+            loop {
+                let result = self.serial.write(buf);
+                if let Ok(count) = result {
+                    return count;
+                }
             }
         }
-
     }
 
     pub fn write_str(&mut self, message: &str) -> usize {
@@ -107,6 +112,10 @@ impl<'a> UsbSerial<'a> {
 
         return bytes_written
 
+    }
+
+    pub fn set_quiet(&mut self, quiet_mode: bool) {
+        self.quiet_mode = quiet_mode;
     }
 }
 

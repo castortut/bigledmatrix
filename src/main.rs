@@ -21,6 +21,7 @@ const HELP_MESSAGE: &str = "
 .s - strobe active row\r
 .c - clear active row\r
 .i - toggle instant strobe\r
+.q - set quiet (high speed) mode\r
 \r
 anything else will be interpreted as data to active row\r
 use '..' to enter a literal '.'-byte as data\r
@@ -80,6 +81,7 @@ fn main() -> ! {
     const CLEAR: u8 = 'c' as u8;
     const HELP: u8 = 'h' as u8;
     const INSTANT: u8 = 'i' as u8;
+    const QUIET: u8 = 'q' as u8;
 
     let mut command_mode = false;
     let mut active_row = Row0;
@@ -137,6 +139,10 @@ fn main() -> ! {
                                 usb_serial.write_str("Enabling instant strobe\r\n");
                                 instant_strobe = true;
                             }
+                            command_mode = false;
+                        },
+                        (true, QUIET, _) => {
+                            usb_serial.set_quiet(true);
                             command_mode = false;
                         },
                         (true, _, _) => {

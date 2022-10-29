@@ -12,6 +12,7 @@ patterns = [
     0b00000001,
 ]
 
+sys.stdout.buffer.write(b'.q.c.s')
 while True:
     for pattern in patterns:
         #sys.stdout.buffer.write(b'.c')
