@@ -6,8 +6,6 @@ image = Image.open(sys.argv[1])
 width, height = image.size
 assert height == 8
 
-pixels = []
-
 for column in range(width-1, -1, -1):
 
     # Build a single byte (display column) from 8 pixels:
