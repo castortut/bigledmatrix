@@ -106,41 +106,41 @@ fn main() -> ! {
                             command_mode = false;
                         },
                         (true, HELP, _) => {
-                            usb_serial.write_str(&HELP_MESSAGE).unwrap();
+                            usb_serial.write_str(&HELP_MESSAGE);
                             command_mode = false;
                         },
                         (true, ROW0, _) => {
                             active_row = Row0;
-                            usb_serial.write_str("Switching to row 0\r\n").unwrap();
+                            usb_serial.write_str("Switching to row 0\r\n");
                             command_mode = false;
                         },
                         (true, ROW1, _) => {
                             active_row = Row1;
-                            usb_serial.write_str("Switching to row 1\r\n").unwrap();
+                            usb_serial.write_str("Switching to row 1\r\n");
                             command_mode = false;
                         },
                         (true, SHOW, _) => {
                             matrix0.show();
-                            usb_serial.write_str("Showing\r\n").unwrap();
+                            usb_serial.write_str("Showing\r\n");
                             command_mode = false;
                         },
                         (true, CLEAR, _) => {
                             matrix0.clear();
-                            usb_serial.write_str("Clearing\r\n").unwrap();
+                            usb_serial.write_str("Clearing\r\n");
                             command_mode = false;
                         },
                         (true, INSTANT, _) => {
                             if instant_strobe {
-                                usb_serial.write_str("Disabling instant strobe\r\n").unwrap();
+                                usb_serial.write_str("Disabling instant strobe\r\n");
                                 instant_strobe = false;
                             } else {
-                                usb_serial.write_str("Enabling instant strobe\r\n").unwrap();
+                                usb_serial.write_str("Enabling instant strobe\r\n");
                                 instant_strobe = true;
                             }
                             command_mode = false;
                         },
                         (true, _, _) => {
-                            usb_serial.write_str("Invalid command character\r\n").unwrap();
+                            usb_serial.write_str("Invalid command character\r\n");
                             command_mode = false;
                         }
                         (false, CONTROL, _) => command_mode = true,
