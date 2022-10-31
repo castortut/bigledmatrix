@@ -70,7 +70,11 @@ fn main() -> ! {
     const WIDTH: u16 = 72;
 
     let mut matrix0 = LedMatrix::new(clock0, data0, strobe0, HEIGHT, WIDTH);
+    matrix0.clear();
+    matrix0.show();
     let mut matrix1 = LedMatrix::new(clock1, data1, strobe1, HEIGHT, WIDTH);
+    matrix1.clear();
+    matrix1.show();
 
     hprintln!("*");
 
