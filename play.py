@@ -32,6 +32,7 @@ def print8(image_region, ymin, ymax):
     sys.stdout.buffer.write(b'.s')
 
 def display(image):
+    _, height = image.size
     if height == 8:
         print8(image, 0, 7)
     elif height == 16:
@@ -43,7 +44,6 @@ def display(image):
 
 # Read a 72x8 or 72x16 image
 image = Image.open(sys.argv[1])
-width, height = image.size
 
 # Quiet mode, e.g. do not block trying to write response message to USB
 sys.stdout.buffer.write(b'.q')
