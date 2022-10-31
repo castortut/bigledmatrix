@@ -1,3 +1,5 @@
+#!/usr/bin/env -S python3 -u
+
 from PIL import Image
 import sys
 import time
@@ -42,6 +44,9 @@ def display(image):
 # Read a 72x8 or 72x16 image
 image = Image.open(sys.argv[1])
 width, height = image.size
+
+# Quiet mode, e.g. do not block trying to write response message to USB
+sys.stdout.buffer.write(b'.q')
 
 if image.is_animated:
     while True:
