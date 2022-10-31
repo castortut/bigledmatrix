@@ -7,7 +7,6 @@ mod matrix;
 
 use cortex_m_rt::{entry, exception, ExceptionFrame};    //  Stack frame for exception handling.
 use panic_semihosting as _;
-use cortex_m_semihosting::hprintln;
 
 use stm32f1xx_hal::{pac, prelude::*};
 
@@ -36,8 +35,6 @@ use Row::*;
 
 #[entry]
 fn main() -> ! {
-    hprintln!("Starting");
-
     // Init chip
     let _cp = cortex_m::Peripherals::take().unwrap();
     let dp = pac::Peripherals::take().unwrap();
@@ -49,7 +46,6 @@ fn main() -> ! {
         .hclk(48.MHz())
         .pclk1(24.MHz())
         .freeze(&mut flash.acr);
-
 
     // Init GPIO
     let mut gpioa = dp.GPIOA.split();
@@ -75,8 +71,6 @@ fn main() -> ! {
     let mut matrix1 = LedMatrix::new(clock1, data1, strobe1, HEIGHT, WIDTH);
     matrix1.clear();
     matrix1.show();
-
-    hprintln!("*");
 
     const CONTROL: u8 = '.' as u8;
     const ROW0: u8 = '0' as u8;
