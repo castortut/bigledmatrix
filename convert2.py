@@ -44,9 +44,10 @@ image = Image.open(sys.argv[1])
 width, height = image.size
 
 if image.is_animated:
-    for frame in range(image.n_frames):
-        image.seek(frame)
-        display(image)
-        time.sleep(0.1)
+    while True:
+        for frame in range(image.n_frames):
+            image.seek(frame)
+            display(image)
+            time.sleep(0.1)
 else:
     display(image)
