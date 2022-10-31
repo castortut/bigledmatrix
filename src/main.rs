@@ -27,7 +27,7 @@ anything else will be interpreted as data to active row\r
 use '..' to enter a literal '.'-byte as data\r
 ";
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 enum Row {
     Row0,
     Row1,
@@ -91,6 +91,15 @@ fn main() -> ! {
     let mut active_row = Row0;
     let mut instant_strobe = false;
 
+    macro_rules! row_select {
+        ($row:expr, $row0cmd:expr, $row1cmd:expr) => {
+            match $row {
+                Row0 => { $row0cmd; },
+                Row1 => { $row1cmd; },
+            };
+        }
+    }
+
     loop {
         if usb_serial.poll() {
             let mut buf = [0u8; 64];
@@ -100,15 +109,11 @@ fn main() -> ! {
 
                     match (command_mode, byte, active_row) {
                         // Escape double-CONTROL
-                        (true, CONTROL, Row0) => {
-                            matrix0.push_row(byte);
+                        (true, CONTROL, row) => {
+                            row_select!(row, matrix0.push_row(byte), matrix1.push_row(byte)); 
                             if instant_strobe {
-                                matrix0.show();
+                                row_select!(row, matrix0.show(), matrix1.show());
                             }
-                            command_mode = false;
-                        },
-                        (true, CONTROL, Row1) => {
-                            matrix1.push_row(byte);
                             command_mode = false;
                         },
                         (true, HELP, _) => {
@@ -125,13 +130,13 @@ fn main() -> ! {
                             usb_serial.write_str("Switching to row 1\r\n");
                             command_mode = false;
                         },
-                        (true, SHOW, _) => {
-                            matrix0.show();
+                        (true, SHOW, row) => {
+                            row_select!(row, matrix0.show(), matrix1.show());
                             usb_serial.write_str("Showing\r\n");
                             command_mode = false;
                         },
-                        (true, CLEAR, _) => {
-                            matrix0.clear();
+                        (true, CLEAR, row) => {
+                            row_select!(row, matrix0.clear(), matrix1.clear());
                             usb_serial.write_str("Clearing\r\n");
                             command_mode = false;
                         },
@@ -154,13 +159,12 @@ fn main() -> ! {
                             command_mode = false;
                         }
                         (false, CONTROL, _) => command_mode = true,
-                        (false, _, Row0) => {
-                            matrix0.push_row(byte);
+                        (false, _, row) => {
+                            row_select!(row, matrix0.push_row(byte), matrix1.push_row(byte)); 
                             if instant_strobe {
-                                matrix0.show();
+                                row_select!(row, matrix0.show(), matrix1.show());
                             }
                         },
-                        (false, _, Row1) => matrix1.push_row(byte),
                     };
                 }
             }
