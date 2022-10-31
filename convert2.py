@@ -1,5 +1,6 @@
 from PIL import Image
 import sys
+import time
 
 def print8(image_region, ymin, ymax):
     width, height = image_region.size
@@ -15,7 +16,7 @@ def print8(image_region, ymin, ymax):
         for row in range(height):
             if ymin <= row <= ymax:
                 pixel = image.getpixel((column, row))
-                if pixel == 0 or pixel == (0,0,0):
+                if pixel in [ 0, (0,0,0), (0,0,0,255)]:
                     tmp |= 1 << (row - ymin)
 
         # escape the control-character by converting '.' -> '..'
@@ -28,16 +29,24 @@ def print8(image_region, ymin, ymax):
     # Strobe the shift register contents to display
     sys.stdout.buffer.write(b'.s')
 
+def display(image):
+    if height == 8:
+        print8(image, 0, 7)
+    elif height == 16:
+        sys.stdout.buffer.write(b'.0')
+        print8(image, 0, 7)
+        sys.stdout.buffer.write(b'.1')
+        print8(image, 8, 15)
+
 
 # Read a 72x8 or 72x16 image
 image = Image.open(sys.argv[1])
 width, height = image.size
 
-if height == 8:
-    print8(image, 0, 7)
-elif height == 16:
-    sys.stdout.buffer.write(b'.0')
-    print8(image, 0, 7)
-    sys.stdout.buffer.write(b'.1')
-    print8(image, 8, 15)
-
+if image.is_animated:
+    for frame in range(image.n_frames):
+        image.seek(frame)
+        display(image)
+        time.sleep(0.1)
+else:
+    display(image)
